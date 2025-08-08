@@ -1,3 +1,4 @@
+require('dotenv').config({path:'../.env'})
 const express = require('express');
 const authRouter = require('./routes/authRoute');
 const authMiddleware = require('./middleware/authMiddleware');
@@ -7,7 +8,7 @@ const PORT = 4000;
 
 app.use(express.json())
 
-app.use('/auth', authMiddleware, authRouter);
+app.use('/auth', authRouter);
 
 app.listen(PORT, () => {
     console.log(`port is open on ${PORT}`)

@@ -15,18 +15,21 @@ router.post('/register', async (req, res) => {
     const hashedPassword = bcrypt.hashSync(password, 8);
 
     try{
+
         const emailCheck = await pool.query(`
         SELECT 1 FROM users WHERE email = $1
       `, [email]);
-
+        
+        
         if(emailCheck.rowCount > 0){
-            res.sendStatus(400).send('user already exists')
+            res.status(400).send('user already exists')
         }
 
         const insertUser = await pool.query(`
         INSERT INTO users (email, password_hash) values ($1, $2) RETURNING id
         `, [email, hashedPassword])
-
+        
+        
         const token = jwt.sign({ id: insertUser.id }, process.env.JWT_SECRET, { expiresIn: '24h'})
         res.json({ token });
     } catch (err) {
@@ -50,8 +53,8 @@ router.post('/login', async (req, res) => {
     try{
         const getUser = await pool.query('SELECT id, email, password_hash FROM users WHERE email=$1', [email]);
 
-        if(getEmail.rowCount == 0){
-            res.sendStatus(404).send('Invalid credentials');
+        if(getUser.rowCount == 0){
+            res.status(404).send('Invalid credentials');
         }
 
         const user = getUser.rows[0];
@@ -59,7 +62,7 @@ router.post('/login', async (req, res) => {
         const isValidPassword = bcrypt.compareSync(password, user.password_hash);
 
         if(!isValidPassword){
-            res.sendStatus(401).send('Incorrect Password');
+            res.status(401).send('Incorrect Password');
         }
 
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' })
