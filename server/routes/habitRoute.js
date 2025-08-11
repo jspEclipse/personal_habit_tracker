@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../db/db');
+const entryRouter = require('./entryRoute');
 
 const router = express.Router()
 
@@ -20,7 +21,7 @@ router.post('/', async (req, res) => {
     try {
         if(habit.type = "quantity"){
             const insertHabit = await pool.query(
-                'INSERT INTO habits (user_id, name, type, goal_quantity) VALUES ($1, $2, $3, $4) RETURNING id created_at',
+                'INSERT INTO habits (user_id, name, type, goal_quantity) VALUES ($1, $2, $3, $4) RETURNING id, created_at',
                 [req.userId, habit.name, habit.type, habit.goal_quantity]
             );
 
@@ -38,21 +39,19 @@ router.post('/', async (req, res) => {
     }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:userId', async (req, res) => {
     const updateHabit = req.body;
-    const { id } = req.params;
+    const { userId } = req.params;
 
     try {
-        const habit = await pool.query("SELECT * FROM habits WHERE id=$1", [id]);
+        const habit = await pool.query("SELECT * FROM habits WHERE id=$1", [userId]);
         
-        // Check if habit exists
         if (habit.rows.length === 0) {
             return res.status(404).json({ error: "Habit not found" });
         }
 
         const existingHabit = habit.rows[0];
         
-        // Validation: if changing from boolean to quantity, must provide goal_quantity
         if (existingHabit.type === "boolean" && updateHabit.type === "quantity" && updateHabit.goal_quantity === null) {
             return res.status(400).json({ error: "must provide goal with quantity" });
         }
@@ -62,13 +61,13 @@ router.put('/:id', async (req, res) => {
         if (updateHabit.type === "quantity") {
             const update = await pool.query(
                 'UPDATE habits SET name = $1, type = $2, goal_quantity = $3 WHERE id = $4 RETURNING *',
-                [updateHabit.name, updateHabit.type, updateHabit.goal_quantity, id]
+                [updateHabit.name, updateHabit.type, updateHabit.goal_quantity, userId]
             );
             updatedHabit = update.rows[0];
         } else {
             const update = await pool.query(
                 'UPDATE habits SET name = $1, type = $2, goal_quantity = $3 WHERE id = $4 RETURNING *',
-                [updateHabit.name, updateHabit.type, null, id]
+                [updateHabit.name, updateHabit.type, null, userId]
             );
             updatedHabit = update.rows[0];
         }
@@ -81,16 +80,18 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
-    const { id } = req.params;
+router.delete('/:habitId', async (req, res) => {
+    const { habitId } = req.params;
     const userId = req.userId
     try{
-        const deleteHabit = pool.query('DELETE FROM habits WHERE id = $1 AND user_id = $2', [id, userId]);
+        const deleteHabit = pool.query('DELETE FROM habits WHERE habitId = $1 AND user_id = $2', [habitId, userId]);
         res.send({ message: "habit deleted" });
     } catch (err) {
         res.status(400).send(err);
     }
 })
+
+router.use('/:habitId/entry', entryRouter);
 
 
 module.exports = router;
