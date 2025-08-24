@@ -11,17 +11,20 @@ export default function Login({ onLogin }){
       setError('');
 
       const formData = new FormData(e.target);
+      const email = formData.get('email');
+      const password = formData.get('password');
 
       try {
-        const response = await axios.post('/auth/login', {
-          email: formData.get('email'),
-          password: formData.get('password')
+        const response = await axios.post('http://localhost:4000/auth/login', {
+          email: email,
+          password: password
         });
 
         localStorage.setItem('token', response.data.token);
         console.log('login successful');
         onLogin();
       } catch(err){
+        console.log(err);
         setError('Login Failed');
       } finally {
         setLoading(false);
@@ -32,20 +35,20 @@ export default function Login({ onLogin }){
       e.preventDefault();
       setError('');
 
-      const formData = new FormData(e.target);
+      const formData = new FormData(e.target.closest('form'));
+      console.log(e.target);
 
       try {
-        const response = await axios.post('/auth/register', {
+        const response = await axios.post('http://localhost:4000/auth/register', {
           email: formData.get('email'),
           password: formData.get('password')
         });
         console.log('sign up successful')
       } catch(err) {
+        console.log(err);
         setError('Login Failed');
       }
     }
-
-  
 
 
 
@@ -63,6 +66,7 @@ export default function Login({ onLogin }){
             <input
                 className="w-full h-5 mb-3 rounded-xl border-2 border-white/10 text-white p-5 bg-white/5 backdrop-blur-none focus:ring-2 shadow-gray-300 focus:outline-hidden transition-shadow duration-200 ease-in-out"
                 id="email"
+                name="email"
                 type="email"
                 placeholder="m@example.com"
                 required
@@ -73,6 +77,7 @@ export default function Login({ onLogin }){
             <input 
                 className="w-full h-5 rounded-xl border-2 border-white/10 text-white p-5 bg-white/5 backdrop-blur-none focus:ring-2 shadow-gray-300 focus:outline-hidden transition-shadow duration-200 ease-in-out"
                 id="password" 
+                name="password"
                 type="password" 
                 required
              />

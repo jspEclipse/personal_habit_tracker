@@ -45,6 +45,8 @@ router.post('/login', async (req, res) => {
     // but we get it back and see it's encrypted, which means that we cannot compare it to the one the user just used trying to login
     // so what we can to do, is again, one way encrypt the password the user just entered
     const { email, password } = req.body;
+    
+    console.log(email + " " + password);
 
     if (!email || !password) {
         return res.status(400).json({ message: 'Email and password are required' });
@@ -54,7 +56,7 @@ router.post('/login', async (req, res) => {
         const getUser = await pool.query('SELECT id, email, password_hash FROM users WHERE email=$1', [email]);
 
         if(getUser.rowCount == 0){
-            res.status(404).send('Invalid credentials');
+            return res.status(404).send('Invalid credentials');
         }
 
         const user = getUser.rows[0];
@@ -62,7 +64,7 @@ router.post('/login', async (req, res) => {
         const isValidPassword = bcrypt.compareSync(password, user.password_hash);
 
         if(!isValidPassword){
-            res.status(401).send('Incorrect Password');
+            return res.status(401).send('Incorrect Password');
         }
 
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' })
